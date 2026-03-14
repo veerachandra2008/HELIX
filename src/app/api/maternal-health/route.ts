@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
-
+import vlm from 'z-ai-web-dev-sdk'
 // GET - Fetch maternal health data for a user
 export async function GET(request: NextRequest) {
   try {
