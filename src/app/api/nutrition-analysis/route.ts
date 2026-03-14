@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { vlm } from 'z-ai-web-dev-sdk'
-
+import vlm from 'z-ai-web-dev-sdk'
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
