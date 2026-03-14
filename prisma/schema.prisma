@@ -1,0 +1,207 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// User/Patient Model with Digital Health Identity
+model User {
+  id                String            @id @default(cuid())
+  email             String            @unique
+  name              String?
+  phone             String?
+  dateOfBirth       DateTime?
+  bloodType         String?
+  emergencyContact  String?
+  emergencyPhone    String?
+  address           String?
+  city              String?
+  state             String?
+  zipCode           String?
+  language          String            @default("en") // en, hi, te, ta
+  digitalHealthId   String            @unique // QR code identifier
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  healthRecords     HealthRecord[]
+  maternalHealth    MaternalHealth?
+  diseaseReports    DiseaseReport[]
+  nutritionalScans  NutritionalScan[]
+  aiConsultations   AIConsultation[]
+  expensePredictions ExpensePrediction[]
+}
+
+// Health Records (Digital Health Passport)
+model HealthRecord {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  recordType      String   // diagnosis, vaccination, lab_result, prescription
+  title           String
+  description     String?
+  provider        String?
+  facilityName    String?
+  facilityId      String?
+  date            DateTime
+  attachments     String?  // JSON array of file URLs
+  symptoms        String?  // JSON array of symptoms
+  diagnosis       String?
+  treatment       String?
+  isEmergency     Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+// Maternal Health Journey
+model MaternalHealth {
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lastMenstrualDate DateTime
+  dueDate           DateTime
+  currentWeek       Int      @default(0)
+  riskLevel         String   @default("low") // low, medium, high
+  numberOfPregnancies Int    @default(0)
+  previousComplications String?
+  antenatalVisits   Int      @default(0)
+  weight            Float?   // in kg
+  height            Float?   // in cm
+  bloodPressure     String?  // e.g., "120/80"
+  hemoglobin        Float?   // in g/dL
+  bloodSugar        Float?   // in mg/dL
+  notes             String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+// Disease Reports for Community Intelligence Map
+model DiseaseReport {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  diseaseType     String   // e.g., "dengue", "malaria", "covid"
+  symptoms        String   // JSON array
+  severity        String   // mild, moderate, severe
+  reportDate      DateTime @default(now())
+  location        String   // address or area
+  latitude        Float?
+  longitude       Float?
+  source          String   // self_report, health_camp, hospital
+  isConfirmed     Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+// Health Camp Tracking
+model HealthCamp {
+  id              String   @id @default(cuid())
+  name            String
+  organizer       String
+  description     String?
+  location        String
+  latitude        Float?
+  longitude       Float?
+  startDate       DateTime
+  endDate         DateTime
+  services        String   // JSON array of services
+  contact         String?
+  status          String   @default("upcoming") // upcoming, ongoing, completed
+  participantCount Int     @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+// Health Facilities
+model HealthFacility {
+  id              String   @id @default(cuid())
+  name            String
+  type            String   // hospital, clinic, pharmacy, diagnostic_center
+  location        String
+  latitude        Float?
+  longitude       Float?
+  address         String?
+  phone           String?
+  email           String?
+  services        String?  // JSON array
+  operatingHours  String?
+  hasEmergency    Boolean  @default(false)
+  bedCapacity     Int?
+  currentOccupancy Int?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+// Water Safety Reports
+model WaterSafetyReport {
+  id              String   @id @default(cuid())
+  location        String
+  latitude        Float?
+  longitude       Float?
+  waterSource     String   // tap, well, river, tank
+  quality         String   // safe, contaminated, untreated
+  contaminants    String?  // JSON array
+  testDate        DateTime?
+  reportDate      DateTime @default(now())
+  reporterName    String?
+  reporterContact String?
+  actionTaken     String?
+  status          String   @default("pending") // pending, investigated, resolved
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+// Nutritional Scans
+model NutritionalScan {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  imageUrl        String
+  foodItems       String   // JSON array of identified foods
+  calories        Float?
+  protein         Float?   // in grams
+  carbs           Float?   // in grams
+  fats            Float?   // in grams
+  vitamins        String?  // JSON object
+  minerals        String?  // JSON object
+  isSafeForPregnancy Boolean?
+  recommendations String?  // JSON array
+  scanDate        DateTime @default(now())
+  createdAt       DateTime @default(now())
+}
+
+// AI Consultations
+model AIConsultation {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  query           String
+  response        String
+  symptoms        String?  // JSON array
+  context         String?  // pregnancy, general, emergency
+  severity        String?
+  recommendations String?  // JSON array
+  followUpNeeded  Boolean  @default(false)
+  consultationDate DateTime @default(now())
+  createdAt       DateTime @default(now())
+}
+
+// Expense Predictions
+model ExpensePrediction {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  predictionType  String   // general, pregnancy, chronic
+  riskCategory    String   // low, medium, high
+  projectedAnnualCost Float
+  projectedMonthlyCost Float
+  factors         String   // JSON object of contributing factors
+  recommendations String?  // JSON array
+  predictionDate  DateTime @default(now())
+  createdAt       DateTime @default(now())
+}
